@@ -12,6 +12,7 @@ var upgrader = websocket.Upgrader{}
 
 func main() {
 	http.HandleFunc("/echo-ping", Handler)
+	log.Println("Starting server...")
 	log.Fatal(http.ListenAndServe("localhost:7777", nil))
 }
 
@@ -34,6 +35,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 				log.Println("on ping:", err)
 				break
 			}
+
+			log.Println("ping sent to client")
 		}
 	}()
 
@@ -45,7 +48,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		log.Println("received:", message)
+		log.Println("received:", string(message))
 		if err := conn.WriteMessage(mt, message); err != nil {
 			log.Println("write:", err)
 			break
