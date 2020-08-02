@@ -15,6 +15,7 @@ const (
 
 func main() {
 	// Connect to the server
+	log.Println("Connecting to server...")
 	ws, err := websocket.Dial(URL, "", ORIGIN)
 	if err != nil {
 		log.Fatal(err)
@@ -27,11 +28,11 @@ func main() {
 		i := 1
 		for {
 			log.Println("sending message:", i)
-			if _, err := ws.Write([]byte(fmt.Sprintf("[FROM CLIENT] %d time!", i))); err != nil {
+			if _, err := ws.Write([]byte(fmt.Sprintf("echo number: %d", i))); err != nil {
 				log.Fatal(err)
 			}
 
-			time.Sleep(time.Duration(rand.Intn(10) + 5))
+			time.Sleep(time.Duration(rand.Intn(10)+5) * time.Second)
 			i++
 		}
 	}()
@@ -41,6 +42,13 @@ func main() {
 		reader, err := ws.NewFrameReader()
 		if err != nil {
 			log.Fatal("on read:", err)
+		}
+
+		// Read
+		msg := make([]byte, 512)
+		if _, err := reader.Read(msg); err != nil {
+			log.Println("on receive:", err)
+			break
 		}
 
 		switch reader.PayloadType() {
@@ -56,12 +64,6 @@ func main() {
 				log.Println("on pong:", err)
 			}
 		default:
-			msg := make([]byte, 512)
-			if _, err := reader.Read(msg); err != nil {
-				log.Println("on receive:", err)
-				break
-			}
-
 			log.Println("received:", string(msg))
 		}
 	}
