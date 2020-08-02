@@ -25,6 +25,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
+	// Add pong handler
+	conn.SetPongHandler(func(appData string) error {
+		log.Println("pong received from client")
+		return nil
+	})
+
 	// Randomly send ping message to client
 	go func() {
 		defer conn.Close()
