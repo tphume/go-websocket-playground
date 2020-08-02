@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"golang.org/x/net/websocket"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 )
@@ -23,16 +23,22 @@ func main() {
 func Handler(ws *websocket.Conn) {
 	defer ws.Close()
 
-	// Sends message periodically
+	// Sends ping message periodically
 	go func() {
-		i := 1
+		// FrameWriter to send ping message with correct opcode
+		ping, err := ws.NewFrameWriter(websocket.PingFrame)
+		if err != nil {
+			return
+		}
+
 		for {
-			if _, err := ws.Write([]byte(fmt.Sprintf("[FROM SERVER] %d time!", i))); err != nil {
-				log.Println("Connection Closed by client")
+			if _, err = ping.Write([]byte("ping message from server")); err != nil {
+				log.Println("on ping:", err)
+				break
 			}
 
-			time.Sleep(time.Second * 10)
-			i++
+			_ = ping.Close()
+			time.Sleep(time.Duration(rand.Intn(10) + 5))
 		}
 	}()
 
