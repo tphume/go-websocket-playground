@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golang.org/x/net/websocket"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -25,22 +26,43 @@ func main() {
 	go func() {
 		i := 1
 		for {
+			log.Println("sending message:", i)
 			if _, err := ws.Write([]byte(fmt.Sprintf("[FROM CLIENT] %d time!", i))); err != nil {
 				log.Fatal(err)
 			}
 
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Duration(rand.Intn(10) + 5))
 			i++
 		}
 	}()
 
 	// Read message until user quits
 	for {
-		msg := make([]byte, 512)
-		if n, err := ws.Read(msg); err != nil {
-			log.Fatal(err)
-		} else {
-			log.Printf("Received: %s.\n", msg[:n])
+		reader, err := ws.NewFrameReader()
+		if err != nil {
+			log.Fatal("on read:", err)
+		}
+
+		switch reader.PayloadType() {
+		case websocket.PingFrame:
+			log.Println("ping received from server")
+
+			pong, err := ws.NewFrameWriter(websocket.PongFrame)
+			if err != nil {
+				log.Println("on pong writer:", err)
+			}
+
+			if _, err := pong.Write([]byte("pong message from client")); err != nil {
+				log.Println("on pong:", err)
+			}
+		default:
+			msg := make([]byte, 512)
+			if _, err := reader.Read(msg); err != nil {
+				log.Println("on receive:", err)
+				break
+			}
+
+			log.Println("received:", string(msg))
 		}
 	}
 }
