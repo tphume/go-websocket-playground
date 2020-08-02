@@ -28,6 +28,7 @@ func Handler(ws *websocket.Conn) {
 		// FrameWriter to send ping message with correct opcode
 		ping, err := ws.NewFrameWriter(websocket.PingFrame)
 		if err != nil {
+			log.Println("on ping writer:", err)
 			return
 		}
 
@@ -43,7 +44,21 @@ func Handler(ws *websocket.Conn) {
 	}()
 
 	//Read message infinitely
-	if _, err := io.Copy(ws, ws); err != nil {
-		return
+	for {
+		reader, err := ws.NewFrameReader()
+		if err != nil {
+			log.Fatal("on read:", err)
+		}
+
+		switch reader.PayloadType() {
+		case websocket.PongFrame:
+			log.Println("pong received from client")
+		default:
+			if _, err := io.Copy(ws, ws); err != nil {
+				log.Println("on echo:", err)
+			}
+
+			log.Println("echo message back")
+		}
 	}
 }
